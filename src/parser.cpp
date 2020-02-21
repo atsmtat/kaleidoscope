@@ -1,15 +1,21 @@
 #include <iostream>
 
 #include "parser.h"
+#include "codegen.h"
 
 /*
 numberexpr -> NUMBER
 identexpr -> IDENT
            | IDENT '(' ( (expression ',')* expression )? ')'
 parenexpr -> '(' expression ')'
-function -> def IDENT '(' IDENT* ')' expression
-          | extern IDENT '(' IDENT* ')'
-
+primaryexpr -> numberexpr
+             | identexpr
+             | parenexpr
+expression -> primaryexpr binoprhs
+binoprhs -> (( '+' | '-' | '*' | '/' | '%' ) primaryexpr)*
+function -> 'def' IDENT '(' IDENT* ')' expression
+          | 'extern' IDENT '(' IDENT* ')'
+main -> function | expression | ';'
  */
 
 void
@@ -236,29 +242,34 @@ Parser::parseLambdaExpr() {
   return nullptr;
 }
 
-void
+FunctionNode::UPtr
 Parser::handleFunction() {
-  if( parseFunction() ) {
+  if( auto fun = parseFunction() ) {
     std::cerr << "Parsed a function" << std::endl;
+    return std::move( fun );
   } else {
     // consume token for error recovery
     getNextToken();
+    return nullptr;
   }
 }
 
-void
+FunctionNode::UPtr
 Parser::handleLambdaExpr() {
-  if( parseLambdaExpr() ) {
+  if( auto fun = parseLambdaExpr() ) {
     std::cerr << "Parsed a lamba expression" << std::endl;
+    return std::move( fun );
   } else {
     // consume token for error recovery
     getNextToken();
+    return nullptr;
   }
 }
 
 void
 Parser::parse() {
   getNextToken();
+  Codegen cg;
   while( true ) {
     std::cout << "kscope>";
     switch( currToken() ) {
@@ -268,14 +279,33 @@ Parser::parse() {
       getNextToken();
       break;
     case DEF:
-      handleFunction();
+      {
+	auto fun = handleFunction();
+	if( fun ) {
+	  fun->accept( cg );
+	  cg.printIR( "Read function definition" );
+	}
+      }
       break;
     case EXTERN:
-      handleFunction();
+      {
+	auto fun = handleFunction();
+	if( fun ) {
+	  fun->accept( cg );
+	  cg.printIR( "Read extern" );
+	}
+      }
       break;
     default:
-      handleLambdaExpr();
+      {
+	auto fun = handleLambdaExpr();
+	if( fun ) {
+	  fun->accept( cg );
+	  cg.printIR( "Read lambda" );
+	}
+      }
       break;
     }
   }
+  cg.printModule();
 }

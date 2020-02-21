@@ -1,0 +1,36 @@
+#pragma once
+
+#include <memory>
+#include <unordered_map>
+#include <deque>
+#include "llvm/IR/LLVMContext.h"
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
+#include "ast.h"
+#include "visitor.h"
+
+class Codegen : public Visitor {
+public:
+  Codegen() : builder_( llvmContext_ ) {
+    theModule_ = std::make_unique< llvm::Module >( "my first module", llvmContext_ );
+  }
+  ~Codegen() = default;
+  
+  void visit( ExprNode & exprNode ) override;
+  void visit( NumberExprNode & numExpr ) override;
+  void visit( VariableExprNode & varExpr ) override;
+  void visit( BinaryExprNode & binExpr ) override;
+  void visit( CallExprNode & callExpr ) override;
+  void visit( FunctionNode & funcNode ) override;
+
+  void printIR( const char * msg ) const;
+  void printModule() const;
+
+ private:
+  llvm::LLVMContext llvmContext_;
+  llvm::IRBuilder<> builder_;
+  std::unique_ptr<llvm::Module> theModule_;
+  std::unordered_map<std::string, llvm::Value *> symTable_;
+  std::deque< llvm::Value * > valStack_;
+  llvm::Function * lastFn_;
+};

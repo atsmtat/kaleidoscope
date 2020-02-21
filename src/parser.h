@@ -45,8 +45,8 @@ class Parser {
   FunctionNode::UPtr parseFunction();
   FunctionNode::UPtr parseLambdaExpr();
 
-  void handleFunction();
-  void handleLambdaExpr();
+  FunctionNode::UPtr handleFunction();
+  FunctionNode::UPtr handleLambdaExpr();
   
   int currToken_;
   Lexer & lexer_;

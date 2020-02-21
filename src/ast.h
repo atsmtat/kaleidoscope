@@ -5,12 +5,23 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "visitor.h"
+
+// Abstract base class for all nodes
+class BaseNode {
+ public:
+  using UPtr = std::unique_ptr<BaseNode>;
+  virtual ~BaseNode() = default;
+  virtual void accept( Visitor & visitor ) = 0;
+};
 
 // Base class for all expression nodes
-class ExprNode {
+class ExprNode : public BaseNode {
 public:
   using UPtr = std::unique_ptr<ExprNode>;
-  virtual ~ExprNode() = default;
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
 };
 
 class NumberExprNode : public ExprNode {
@@ -18,6 +29,10 @@ public:
   NumberExprNode(double num) : num_(num) {}
 
   double num() const { return num_; }
+
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
 
 private:
   double num_;
@@ -28,6 +43,10 @@ public:
   VariableExprNode(std::string varName) : varName_(std::move(varName)) {}
 
   std::string varName() const { return varName_; }
+
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
 
 private:
   std::string varName_;
@@ -73,6 +92,10 @@ public:
   ExprNode * lhs() const { return lhs_.get(); }
   ExprNode * rhs() const { return rhs_.get(); }
 
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
+
 private:
   Op op_;
   ExprNode::UPtr lhs_;
@@ -87,12 +110,16 @@ public:
   std::string callee() const { return callee_; }
   const std::vector<ExprNode::UPtr> &args() const { return args_; }
 
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
+  
 private:
   std::string callee_;
   std::vector<ExprNode::UPtr> args_;
 };
 
-class FunctionNode {
+class FunctionNode : public BaseNode {
 public:
  FunctionNode(bool isDecl, std::string name, std::vector<std::string> args,
                ExprNode::UPtr body)
@@ -106,6 +133,10 @@ public:
   const std::vector<std::string> & args() const { return args_; }
   ExprNode * body() const { return body_.get(); }
 
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
+  
 private:
   bool isDecl_;
   std::string name_;

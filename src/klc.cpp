@@ -10,5 +10,6 @@ main() {
 
   std::cout << "kscope>";
   parser.parse();
+
   return 0;
 }
