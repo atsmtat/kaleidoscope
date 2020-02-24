@@ -70,6 +70,7 @@ Codegen::visit( BinaryExprNode & binExpr ) {
 
 void
 Codegen::visit( CallExprNode & callExpr ) {
+  // Lookup called function name in llvm module table
   Function *func = theModule_->getFunction( callExpr.callee() );
   if( !func ) {
     logError( "error: called unknown function" );
@@ -99,13 +100,17 @@ Codegen::visit( FunctionNode & funcNode ) {
   Function * fun = theModule_->getFunction( funcNode.name() );
 
   if( !fun || funcNode.isDecl() ) {
+    // Create function type double(double, double,...)
+    // last arg flase means it's not a vararg function
     std::vector< Type * > doubles( funcNode.args().size(), Type::getDoubleTy( llvmContext_ ) );
-
     FunctionType * ft = FunctionType::get( Type::getDoubleTy( llvmContext_ ),
 					   std::move( doubles ),
 					   false );
+
+    // Create function of type ft and insert it into theModule_ llvm module
     fun = Function::Create( ft, Function::ExternalLinkage, funcNode.name(), theModule_.get() );
 
+    // Give each arg of Function fun a name
     unsigned i = 0;
     for( auto & arg : fun->args() ) {
       arg.setName( funcNode.args()[ i++ ] );
@@ -124,7 +129,10 @@ Codegen::visit( FunctionNode & funcNode ) {
     return logError( "function cannot be redefined" );
   }
 
+  // Create a basic block and add it at the end of Function fun.
   BasicBlock * bb = BasicBlock::Create( llvmContext_, "entry", fun );
+
+  // Tell builder to insert new instructions into this new BB
   builder_.SetInsertPoint(bb);
 
   symTable_.clear();
@@ -132,14 +140,18 @@ Codegen::visit( FunctionNode & funcNode ) {
     symTable_[ std::string(arg.getName()) ] = &arg;
   }
 
+  // Generate code for function body
   funcNode.body()->accept( *this );
   if( !valStack_.empty() ) {
+    // Everything went well, generate ret instruction
+    // returning function body expression value
     builder_.CreateRet( valStack_.front() );
     valStack_.pop_front();
     verifyFunction( *fun );
     return;
   }
 
+  // Error in generating body, remove function
   fun->eraseFromParent();
   lastFn_ = nullptr;
 }

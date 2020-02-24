@@ -274,6 +274,8 @@ Parser::parse() {
     std::cout << "kscope>";
     switch( currToken() ) {
     case EOF_TOK:
+      std::cerr << "Printing module content:" << std::endl;
+      cg.printModule();
       return;
     case ';':
       getNextToken();
@@ -307,5 +309,4 @@ Parser::parse() {
       break;
     }
   }
-  cg.printModule();
 }
