@@ -7,12 +7,31 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
 #include "codegen.h"
 
 using namespace llvm;
 
 void logError( const std::string & err ) {
   std::cerr << "error: " << err << std::endl;
+}
+
+void
+Codegen::setupFunctionPassManager() {
+  theFPM_ = std::make_unique<legacy::FunctionPassManager>( theModule_.get() );
+
+  // "peephole" and bit-twiddling optimizations
+  theFPM_->add(createInstructionCombiningPass());
+  // Reassociate expressions
+  theFPM_->add(createReassociatePass());
+  // Common Subexpression Elimination
+  theFPM_->add(createGVNPass());
+  // Simplify CFG (delete unreachable blocks, etc.)
+  theFPM_->add(createCFGSimplificationPass());
+
+  theFPM_->doInitialization();
 }
 
 void
@@ -148,6 +167,9 @@ Codegen::visit( FunctionNode & funcNode ) {
     builder_.CreateRet( valStack_.front() );
     valStack_.pop_front();
     verifyFunction( *fun );
+
+    // Optimize the function
+    theFPM_->run( *fun );
     return;
   }
 
