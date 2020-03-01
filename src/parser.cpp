@@ -8,9 +8,11 @@ numberexpr -> NUMBER
 identexpr -> IDENT
            | IDENT '(' ( (expression ',')* expression )? ')'
 parenexpr -> '(' expression ')'
+ifelseExpr -> 'if' expression 'then' expression 'else' expression
 primaryexpr -> numberexpr
              | identexpr
              | parenexpr
+             | ifelseExpr
 expression -> primaryexpr binoprhs
 binoprhs -> (( '+' | '-' | '*' | '/' | '%' ) primaryexpr)*
 function -> 'def' IDENT '(' IDENT* ')' expression
@@ -131,6 +133,43 @@ Parser::parseIdentExpr() {
 }
 
 ExprNode::UPtr
+Parser::parseIfElseExpr() {
+  // consume 'if'
+  getNextToken();
+
+  auto condExpr = parseExpr();
+  if( !condExpr ) {
+    return nullptr;
+  }
+
+  if( currToken() != Token::THEN ) {
+    logError( "expected 'then'" );
+    return nullptr;
+  }
+  // consume 'then'
+  getNextToken();
+
+  auto thenExpr = parseExpr();
+  if( !thenExpr ) {
+    return nullptr;
+  }
+
+  if( currToken() != Token::ELSE ) {
+    logError( "expected 'else'");
+    return nullptr;
+  }
+  // consume 'else'
+  getNextToken();
+
+  auto elseExpr = parseExpr();
+  if( !elseExpr ) {
+    return nullptr;
+  }
+
+  return std::make_unique< IfElseExprNode >( std::move(condExpr), std::move(thenExpr), std::move(elseExpr) );
+}
+
+ExprNode::UPtr
 Parser::parsePrimary() {
   switch( currToken() ) {
   case NUMBER:
@@ -141,6 +180,9 @@ Parser::parsePrimary() {
     break;
   case '(':
     return parseParenExpr();
+    break;
+  case IF:
+    return parseIfElseExpr();
     break;
   default:
     logError( "unknown token while parsing expression" );

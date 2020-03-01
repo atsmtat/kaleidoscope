@@ -22,6 +22,15 @@ Lexer::getToken() {
     if( identifierStr_ == "extern" ) {
       return EXTERN;
     }
+    if( identifierStr_ == "if" ) {
+      return IF;
+    }
+    if( identifierStr_ == "then" ) {
+      return THEN;
+    }
+    if( identifierStr_ == "else" ) {
+      return ELSE;
+    }
     return IDENT;
   }
 

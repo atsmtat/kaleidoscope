@@ -5,6 +5,7 @@ class NumberExprNode;
 class VariableExprNode;
 class BinaryExprNode;
 class CallExprNode;
+class IfElseExprNode;
 class FunctionNode;
 
 class Visitor {
@@ -14,5 +15,6 @@ public:
   virtual void visit( VariableExprNode & ) = 0;
   virtual void visit( BinaryExprNode & ) = 0;
   virtual void visit( CallExprNode & ) = 0;
+  virtual void visit( IfElseExprNode & ) = 0;
   virtual void visit( FunctionNode & ) = 0;
 };

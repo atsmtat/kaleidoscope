@@ -38,6 +38,7 @@ class Parser {
   ExprNode::UPtr parseNumberExpr();
   ExprNode::UPtr parseParenExpr();
   ExprNode::UPtr parseIdentExpr();
+  ExprNode::UPtr parseIfElseExpr();
   ExprNode::UPtr parsePrimary();
   ExprNode::UPtr parseBinOpRHS( int minPrec, ExprNode::UPtr lhs );
   ExprNode::UPtr parseExpr();

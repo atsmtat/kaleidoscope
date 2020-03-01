@@ -119,6 +119,31 @@ private:
   std::vector<ExprNode::UPtr> args_;
 };
 
+class IfElseExprNode : public ExprNode {
+ public:
+  IfElseExprNode(ExprNode::UPtr condExpr, ExprNode::UPtr thenExpr, ExprNode::UPtr elseExpr)
+    : condExpr_(std::move(condExpr)), thenExpr_(std::move(thenExpr)), elseExpr_(std::move(elseExpr)) {}
+
+  ExprNode * condExpr() const {
+    return condExpr_.get();
+  }
+  ExprNode * thenExpr() const {
+    return thenExpr_.get();
+  }
+  ExprNode * elseExpr() const {
+    return elseExpr_.get();
+  }
+
+  void accept( Visitor & visitor ) override {
+    visitor.visit( *this );
+  }
+
+ private:
+  ExprNode::UPtr condExpr_;
+  ExprNode::UPtr thenExpr_;
+  ExprNode::UPtr elseExpr_;  
+};
+
 class FunctionNode : public BaseNode {
 public:
  FunctionNode(bool isDecl, std::string name, std::vector<std::string> args,

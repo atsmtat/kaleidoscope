@@ -115,6 +115,71 @@ Codegen::visit( CallExprNode & callExpr ) {
 }
 
 void
+Codegen::visit( IfElseExprNode & ifelseExpr ) {
+  ifelseExpr.condExpr()->accept( *this );
+  if( valStack_.empty() ) {
+    return;
+  }
+
+  // Convert cond expr to bool by comparing with 0.0 (x != 0.0)
+  Value * condVal = valStack_.front();
+  valStack_.pop_front();
+  condVal = builder_.CreateFCmpONE( condVal, ConstantFP::get( llvmContext_, APFloat(0.0)), "ifcond" );
+
+  // Get Function in which we want to add BB for then, else and ifcont.
+  Function * fun = builder_.GetInsertBlock()->getParent();
+
+  // Create BB for then and insert it at the end of fun
+  BasicBlock * thenBB = BasicBlock::Create(llvmContext_, "then", fun );
+
+  // Create BB for else and merge (if cont..) but don't insert them into
+  // fun yet
+  BasicBlock * elseBB = BasicBlock::Create(llvmContext_, "else" );
+  BasicBlock * ifContBB = BasicBlock::Create(llvmContext_, "ifcont" );
+
+  // Create conditional branch
+  builder_.CreateCondBr( condVal, thenBB, elseBB );
+
+  // Emit then code in thenBB
+  builder_.SetInsertPoint(thenBB);
+  ifelseExpr.thenExpr()->accept(*this);
+  if( valStack_.empty() ) {
+    return;
+  }
+  Value * thenVal = valStack_.front();
+  valStack_.pop_front();
+  builder_.CreateBr(ifContBB);
+  // codegen for then could change the current block,
+  // get then predecessor for phi
+  BasicBlock * thenPredBB = builder_.GetInsertBlock();
+
+  // Emit else code in elseBB
+  // Insert elseBB into fun
+  fun->getBasicBlockList().push_back(elseBB);
+  builder_.SetInsertPoint(elseBB);
+  ifelseExpr.elseExpr()->accept(*this);
+  if( valStack_.empty() ) {
+    return;
+  }
+  Value * elseVal = valStack_.front();
+  valStack_.pop_front();
+  builder_.CreateBr(ifContBB);
+  // codegen for else could change the current block,
+  // get else predecessor for phi
+  BasicBlock * elsePredBB = builder_.GetInsertBlock();
+
+  // Emit if cont. code
+  fun->getBasicBlockList().push_back(ifContBB);
+  builder_.SetInsertPoint(ifContBB);
+  PHINode * phiNode =
+    builder_.CreatePHI(Type::getDoubleTy(llvmContext_), 2, "iftmp");
+  phiNode->addIncoming( thenVal, thenPredBB );
+  phiNode->addIncoming( elseVal, elsePredBB );
+
+  valStack_.emplace_front(phiNode);
+}
+
+void
 Codegen::visit( FunctionNode & funcNode ) {
   Function * fun = theModule_->getFunction( funcNode.name() );
 

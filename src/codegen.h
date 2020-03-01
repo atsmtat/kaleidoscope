@@ -25,6 +25,7 @@ public:
   void visit( VariableExprNode & varExpr ) override;
   void visit( BinaryExprNode & binExpr ) override;
   void visit( CallExprNode & callExpr ) override;
+  void visit( IfElseExprNode & ifelseExpr ) override;
   void visit( FunctionNode & funcNode ) override;
 
   void printIR( const char * msg ) const;

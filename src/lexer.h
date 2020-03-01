@@ -11,7 +11,11 @@ enum Token {
   EXTERN = -3,
 
   IDENT = -4,
-  NUMBER = -5
+  NUMBER = -5,
+
+  IF = -6,
+  THEN = -7,
+  ELSE = -8,
 };
 
 class Lexer {
