@@ -1,1 +1,1 @@
-clang++ -g lexer.cpp parser.cpp codegen.cpp klc.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core` -o klc
+clang++ -g lexer.cpp parser.cpp codegen.cpp klc.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core native` -o klc
