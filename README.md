@@ -1,1 +1,1 @@
-clang++ -g lexer.cpp parser.cpp codegen.cpp klc.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core native` -o klc
+Fun with using LLVM IR to implement [Kaleidoscope](https://www.llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html)
